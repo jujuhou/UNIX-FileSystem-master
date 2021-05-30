@@ -5,6 +5,8 @@
 # include <fstream>
 # include <string>
 # include <time.h>
+# include <iomanip>
+#include<bitset>
 using namespace std;
 
 //************************常量定义**********************
@@ -14,7 +16,7 @@ static const string DISK_NAME = "myDisk.img";
 //文件可以使用的最大节点数量
 static const unsigned int NINODE = 16;
 //子目录的最大数量
-static const unsigned int SUBDIRECTORY_NUM = 16;
+static const unsigned int SUBDIRECTORY_NUM = 12;
 //文件名称的最大长度
 static const unsigned int FILE_NAME_MAX = 32;
 //--------------------- 用户 ---------------------------
@@ -47,6 +49,9 @@ static const unsigned int INODE_POSITION = int(INODE_BITMAP_POSITION + INODE_BIT
 static const unsigned int BLOCK_NUM = 500;
 //Block开始的位置（以block为单位）
 static const unsigned int BLOCK_POSITION = int(INODE_POSITION + INODE_SIZE * INODE_NUM / BLOCK_SIZE);
+//Directory位于的Inode块
+static const unsigned int DIRECTORY_INODE = 2;
+
 
 
 
@@ -107,15 +112,23 @@ struct User {
 	char u_name[USER_NUM][USER_NAME_MAX];     //用户名
 	char u_password[USER_NUM][USER_PASSWORD_MAX]; //用户密码
 };
-//********************************全局变量*****************************
+//*******************************全局变量********************************
+#ifdef MAIN
+#define EXTERN    //定义变量
+#else
+#define EXTERN extern  //声明变量
+#endif
 
-
+EXTERN Directory directory;//当前目录
+EXTERN fstream fd;//全局文件指针
+EXTERN unsigned short user_id;//当前用户id
 
 //*********************************函数操作*******************************
 //--------------------tools-----------------------
 //初始化整个文件系统空间
-bool Init();
-
+void Init();
+//打开文件系统
+void Activate();
 
 
 //--------------------Block-----------------------
@@ -127,3 +140,22 @@ void Free_Block(unsigned int block_num);
 void Read_SuperBlock(SuperBlock& superblock);
 //写SuperBlock块
 void Write_SuperBlock(SuperBlock& superblock);
+//读出Bitmap块
+void Read_InodeBitMap(unsigned int* inode_bitmap);
+//写Bitmap块
+void Write_InodeBitMap(unsigned int* inode_bitmap);
+//读出User块
+void Read_User(User& user);
+//写User块
+void Write_User(User& user);
+//读出Inode块
+void Read_Inode(Inode& inode, unsigned int pos);
+//写Inode块
+void Write_Inode(Inode& inode, unsigned int pos);
+
+
+//---------------------File---------------------
+//创建一个文件
+void Create_File(const char* file_name);
+//展示文件列表
+void Show_File_List();

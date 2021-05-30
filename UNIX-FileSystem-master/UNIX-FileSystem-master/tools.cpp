@@ -1,8 +1,8 @@
 #include "head.h"
 #include "error.h"
-//初始化整个文件系统空间
 
-bool Init()
+//初始化整个文件系统空间
+void Init()
 {
 	//在当前目新建文件作为文件卷
 	fstream fd(DISK_NAME, ios::out );
@@ -53,8 +53,9 @@ bool Init()
 	inode_bitmap[0] = 1;
 	inode_bitmap[1] = 1;
 	//写入内存
+	//写入内存
 	fd.seekg(INODE_BITMAP_POSITION * BLOCK_SIZE, ios::beg);
-	fd.write((char*)&inode_bitmap, sizeof(inode_bitmap));
+	fd.write((char*)inode_bitmap, sizeof(unsigned int) * INODE_NUM);
 
 	//创建根目录（目录的权限无值）
 	Inode Inode_root;
@@ -64,11 +65,22 @@ bool Init()
 	Inode_root.i_count=0;//引用计数
 	Inode_root.i_uid=0;//管理员
 	Inode_root.i_gid=1;//文件所有者的组标识
-	Inode_root.i_size=0;//目录大小为0
+	Inode_root.i_size=1;//目录大小为1
 	Inode_root.time= time(NULL);//最后访问时间
 	//写入内存
 	fd.seekg(INODE_POSITION * BLOCK_SIZE, ios::beg);
 	fd.write((char*)&Inode_root, sizeof(Inode_root));
+	//0号Block写入Directory
+	Directory root_directory;
+	strcpy(root_directory.d_filename[0],".");//0是自己
+	root_directory.d_inodenumber[0] = 0;
+	strcpy(root_directory.d_filename[1], "..");//1是父亲（此处还是自己）
+	root_directory.d_inodenumber[1] = 0;
+	for (int i = 2; i < SUBDIRECTORY_NUM; i++) {
+		root_directory.d_filename[i][0] = '\0';
+	}
+	fd.seekg(BLOCK_POSITION*BLOCK_SIZE, ios::beg);
+	fd.write((char*)&root_directory, sizeof(root_directory));
 
 	//创建用户文件
 	Inode Inode_accounting;
@@ -79,7 +91,7 @@ bool Init()
 	Inode_root.i_permission = 0700;//管理员可读写
 	Inode_root.i_uid = 0;//管理员
 	Inode_root.i_gid = 1;//文件所有者的组标识
-	Inode_root.i_size = 0;//目录大小为0
+	Inode_root.i_size = 1;//目录大小为1
 	Inode_root.time = time(NULL);//最后访问时间
 	//写入内存
 	fd.seekg(INODE_POSITION * BLOCK_SIZE+INODE_SIZE, ios::beg);
@@ -100,6 +112,22 @@ bool Init()
 	fd.seekg(BLOCK_POSITION * BLOCK_SIZE + Inode_accounting.i_addr[0]*BLOCK_SIZE, ios::beg);
 	fd.write((char*)&user, sizeof(user));
 
-	return true;
 	fd.close();
+}
+
+//打开文件系统
+void Activate()
+{
+	//打开文件卷
+	fd.open(DISK_NAME, ios::out | ios::in | ios::binary);
+	//如果没有打开文件则输出提示信息并throw错误
+	if (!fd.is_open()) {
+		cout << "无法打开文件卷myDisk.img" << endl;
+		throw(ERROR_CANT_OPEN_FILE);
+	}
+
+	//读取当前目录
+	fd.seekg(BLOCK_POSITION * BLOCK_SIZE, ios::beg);
+	fd.read((char*)&directory, sizeof(directory));
+
 }
