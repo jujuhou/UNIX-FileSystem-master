@@ -84,7 +84,7 @@ struct Inode {
 	unsigned short i_uid;//文件所有者的用户标识
 	unsigned short i_gid;//文件所有者的组标识
 	unsigned int i_size;//文件大小，字节为单位
-	time_t time;//最后访问时间
+	time_t i_time;//最后访问时间
 };
 
 //SuperBlock结构体
@@ -111,6 +111,13 @@ struct User {
 	unsigned short u_gid[USER_NUM];//用户所在组id
 	char u_name[USER_NUM][USER_NAME_MAX];     //用户名
 	char u_password[USER_NUM][USER_PASSWORD_MAX]; //用户密码
+};
+
+//File结构体
+struct File {
+	unsigned int f_inodeid;//文件的inode编号
+	unsigned int f_offset;//文件的读写指针位置
+	unsigned int f_uid;//文件打开用户
 };
 //*******************************全局变量********************************
 #ifdef MAIN
@@ -157,5 +164,23 @@ void Write_Inode(Inode& inode, unsigned int pos);
 //---------------------File---------------------
 //创建一个文件
 void Create_File(const char* file_name);
+//删除一个文件
+void Delete_File(const char* file_name);
 //展示文件列表
 void Show_File_List();
+//根据文件名称打开一个当前目录的文件
+File* Open_File(const char* file_name);
+//根据文件结构体关闭一个文件
+void Close_File(File* file);
+//写文件
+unsigned int Write_File(File* file, const char* content);
+//更改文件指针
+void Seek_File(File* file, unsigned int pos);
+//读文件
+unsigned int Read_File(File* file, char* content);
+
+//------------------Directory----------------------
+//创建一个目录
+void Create_Directory(const char* directory_name);
+//打开一个目录
+void Open_Directory(const char* directory_name);

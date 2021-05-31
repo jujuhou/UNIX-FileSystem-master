@@ -57,7 +57,7 @@ void Init()
 	fd.seekg(INODE_BITMAP_POSITION * BLOCK_SIZE, ios::beg);
 	fd.write((char*)inode_bitmap, sizeof(unsigned int) * INODE_NUM);
 
-	//创建根目录（目录的权限无值）
+	//创建根目录
 	Inode Inode_root;
 	Inode_root.i_number=0;//Inode的编号
 	Inode_root.i_addr[0]=0;//对应0号Block
@@ -65,8 +65,9 @@ void Init()
 	Inode_root.i_count=0;//引用计数
 	Inode_root.i_uid=0;//管理员
 	Inode_root.i_gid=1;//文件所有者的组标识
-	Inode_root.i_size=1;//目录大小为1
-	Inode_root.time= time(NULL);//最后访问时间
+	Inode_root.i_size=0;//目录大小为0
+	Inode_root.i_time= time(NULL);//最后访问时间
+	Inode_root.i_permission = 0777;
 	//写入内存
 	fd.seekg(INODE_POSITION * BLOCK_SIZE, ios::beg);
 	fd.write((char*)&Inode_root, sizeof(Inode_root));
@@ -78,6 +79,9 @@ void Init()
 	root_directory.d_inodenumber[1] = 0;
 	for (int i = 2; i < SUBDIRECTORY_NUM; i++) {
 		root_directory.d_filename[i][0] = '\0';
+	}
+	for (int i = 2; i < SUBDIRECTORY_NUM; i++) {
+		root_directory.d_inodenumber[i] = -1;
 	}
 	fd.seekg(BLOCK_POSITION*BLOCK_SIZE, ios::beg);
 	fd.write((char*)&root_directory, sizeof(root_directory));
@@ -91,8 +95,8 @@ void Init()
 	Inode_root.i_permission = 0700;//管理员可读写
 	Inode_root.i_uid = 0;//管理员
 	Inode_root.i_gid = 1;//文件所有者的组标识
-	Inode_root.i_size = 1;//目录大小为1
-	Inode_root.time = time(NULL);//最后访问时间
+	Inode_root.i_size = 0;//目录大小为1
+	Inode_root.i_time = time(NULL);//最后访问时间
 	//写入内存
 	fd.seekg(INODE_POSITION * BLOCK_SIZE+INODE_SIZE, ios::beg);
 	fd.write((char*)&Inode_accounting, sizeof(Inode_accounting));
