@@ -14,16 +14,16 @@ using namespace std;
 //文件卷名称
 static const string DISK_NAME = "myDisk.img";
 //文件可以使用的最大节点数量
-static const unsigned int NINODE = 16;
+static const unsigned int NINODE = 10;
 //子目录的最大数量
 static const unsigned int SUBDIRECTORY_NUM = 12;
 //文件名称的最大长度
 static const unsigned int FILE_NAME_MAX = 32;
 //--------------------- 用户 ---------------------------
 //用户最大数量
-static const unsigned int USER_NUM = 16;
+static const unsigned int USER_NUM = 6;
 //用户名称的最大长度
-static const unsigned int USER_NAME_MAX = 32;
+static const unsigned int USER_NAME_MAX = 16;
 //用户密码的最大长度
 static const unsigned int USER_PASSWORD_MAX = 32;
 //--------------------- 空间分配 ---------------------------
@@ -42,11 +42,11 @@ static const unsigned int INODE_BITMAP_SIZE = sizeof(int) * INODE_NUM;
 //Inode位示图开始的位置（以block为单位）
 static const unsigned int INODE_BITMAP_POSITION = int(SUPERBLOCK_POSITION + SUPERBLOCK_SIZE / BLOCK_SIZE);
 //Inode大小
-static const unsigned int INODE_SIZE = 128;
+static const unsigned int INODE_SIZE = 64;
 //Inode开始的位置（以block为单位）
 static const unsigned int INODE_POSITION = int(INODE_BITMAP_POSITION + INODE_BITMAP_SIZE / BLOCK_SIZE);
 //Block数量
-static const unsigned int BLOCK_NUM = 500;
+static const unsigned int BLOCK_NUM =100000U;
 //Block开始的位置（以block为单位）
 static const unsigned int BLOCK_POSITION = int(INODE_POSITION + INODE_SIZE * INODE_NUM / BLOCK_SIZE);
 //Directory位于的Inode块
@@ -71,19 +71,19 @@ struct Inode {
 		GROUP_R = 040,
 		GROUP_W = 020,
 		GROUP_E = 010,
-		OTHER_R = 04,
-		OTHER_W = 02,
-		OTHER_E = 01,
+		ELSE_R = 04,
+		ELSE_W = 02,
+		ELSE_E = 01,
 	};
 
-	unsigned int i_number;//Inode的编号
 	unsigned int i_addr[NINODE];//逻辑块号和物理块号转换的索引表
+	unsigned int i_size;//文件大小，字节为单位
+	unsigned short i_count;//引用计数
+	unsigned short i_number;//Inode的编号
 	unsigned short i_mode;//文件工作方式信息
-	unsigned int i_count;//引用计数
 	unsigned short i_permission;//文件权限
 	unsigned short i_uid;//文件所有者的用户标识
 	unsigned short i_gid;//文件所有者的组标识
-	unsigned int i_size;//文件大小，字节为单位
 	time_t i_time;//最后访问时间
 };
 
@@ -91,10 +91,8 @@ struct Inode {
 struct SuperBlock {
 	unsigned short s_inodenum;//Inode总数
 	unsigned short s_finodenum;//空闲Inode数
-	unsigned short s_inodesize;//Inode大小
 	unsigned short s_blocknum;//Block总数
 	unsigned short s_fblocknum;//空闲Block数
-	unsigned short s_blocksize;//Block大小
 	unsigned int s_nfree;//直接管理的空闲块数
 	unsigned int s_free[FREE_BLOCK_GROUP_NUM];//空闲块索引表
 };
@@ -136,6 +134,31 @@ EXTERN unsigned short user_id;//当前用户id
 void Init();
 //打开文件系统
 void Activate();
+//指令说明文档
+void help();
+void help_attrib();
+void help_cd();
+void help_del();
+void help_dir();
+void help_exit();
+void help_mkdir();
+void help_rmdir();
+void help_print();
+void help_write();
+void help_open();
+void help_close();
+void help_fseek();
+void help_create();
+void help_logout();
+void help_whoami();
+void help_format();
+void help_register();
+void help_deleteaccount();
+void help_su();
+void help_chgrp();
+void help_userlist();
+void help_openlist();
+
 
 
 //--------------------Block-----------------------
@@ -159,6 +182,8 @@ void Write_User(User& user);
 void Read_Inode(Inode& inode, unsigned int pos);
 //写Inode块
 void Write_Inode(Inode& inode, unsigned int pos);
+//Inode根据逻辑块号对应物理块号
+void Get_Block_Pysical_Num(Inode& inode, unsigned int logical_num, unsigned int& physical_num_1, unsigned int& physical_num_2, unsigned int& physical_num_3);
 
 
 //---------------------File---------------------
@@ -167,7 +192,7 @@ void Create_File(const char* file_name);
 //删除一个文件
 void Delete_File(const char* file_name);
 //展示文件列表
-void Show_File_List();
+void Show_File_List(bool detail);
 //根据文件名称打开一个当前目录的文件
 File* Open_File(const char* file_name);
 //根据文件结构体关闭一个文件
@@ -178,9 +203,31 @@ unsigned int Write_File(File* file, const char* content);
 void Seek_File(File* file, unsigned int pos);
 //读文件
 unsigned int Read_File(File* file, char* content);
+//更改一个文件的权限
+void Edit_File_Permission(const char* directory_name, unsigned short permission, bool add);
 
 //------------------Directory----------------------
 //创建一个目录
 void Create_Directory(const char* directory_name);
 //打开一个目录
 void Open_Directory(const char* directory_name);
+//获取当前目录
+string Current_Directory();
+//删除一个目录
+void Remove_Directory(const char* directory_name);
+
+//---------------------User------------------------
+//登录用户
+void User_Login(const char* user_name, const char* password);
+//登出用户
+void User_Logout();
+//创建用户
+void User_Register(const char* user_name, const char* password);
+//获取当前登录的用户的用户名和用户id
+unsigned int Get_User(char* username);
+//删除用户
+void User_Delete(const char* user_name);
+// 更改用户的所属的组
+void Change_User_Group(const char* user_name, unsigned int user_group);
+//显示用户列表
+void Show_User_List();
