@@ -202,7 +202,7 @@ unsigned int Write_File(File* file, const char* content);
 //更改文件指针
 void Seek_File(File* file, unsigned int pos);
 //读文件
-unsigned int Read_File(File* file, char* content);
+unsigned int Read_File(File* file, char* content,int length);
 //更改一个文件的权限
 void Edit_File_Permission(const char* directory_name, unsigned short permission, bool add);
 

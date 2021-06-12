@@ -284,6 +284,12 @@ void Open_Directory(const char* directory_name)
 //获取当前目录（其实按理来说应该返回char*）
 string Current_Directory()
 {
+	//读取当前目录
+	fd.open(DISK_NAME, ios::out | ios::in | ios::binary);
+	fd.seekg(BLOCK_POSITION * BLOCK_SIZE, ios::beg);
+	fd.read((char*)&directory, sizeof(directory));
+	fd.close();
+
 	Directory father_directory,current_directory= directory;
 	
 	string dir_path = "";

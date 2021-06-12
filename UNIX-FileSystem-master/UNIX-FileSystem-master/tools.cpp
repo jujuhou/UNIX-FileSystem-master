@@ -196,7 +196,7 @@ void help()
 	cout << "LOGOUT         用户退出登录" << endl;
 	cout << "WHOAMI         显示当前用户信息" << endl;
 	cout << "FORMAT         格式化文件卷" << endl;
-	cout << "REGISTER       用户注册" << endl;
+	cout << "REGISTER       用户注册（root用户下）" << endl;
 	cout << "DELETEACCOUNT  删除用户（root用户下）" << endl;
 	cout << "SU             改变用户" << endl;
 	cout << "CHGRP          改变用户所属组（root用户下）" << endl;
@@ -279,9 +279,10 @@ void help_print()
 {
 	cout << "打印文本文件。" << endl;
 	cout << endl;
-	cout << "PRINT [filename] [path]" << endl;
+	cout << "PRINT filename [-l length] [-p path]" << endl;
 	cout << endl;
 	cout << "  filename 打印的文件名称。" << endl;
+	cout << "  length   打印的长度，默认全部打印" << endl;
 	cout << "  path     可选，打印到文件系统所在目录的文件名称。" << endl;
 }
 void help_write()

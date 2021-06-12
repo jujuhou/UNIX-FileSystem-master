@@ -43,19 +43,25 @@ void User_Register(const char* user_name, const char* password)
 		cout << "只有root用户可以进行注册" << endl;
 		throw(ERROR_NO_PERMISSION);
 	}
-
-	for (int i = 0; i < USER_NUM; i++) {
+	int i;
+	for (i = 0; i < USER_NUM; i++) {
 		if (strcmp(user.u_name[i], user_name) == 0) {
 			cout << "用户名已存在，无法注册" << endl;
 			throw(ERROR_USER_REGISTER);
 		}
 	}
-	for (int i = 0; i < USER_NUM; i++) {
+	for (i = 0; i < USER_NUM; i++) {
 		if (strlen(user.u_name[i])==0) {
 			strcpy(user.u_name[i], user_name);
 			strcpy(user.u_password[i], password);
+			user.u_id[i] = i;
+			user.u_gid[i] = 2;
 			break;
 		}
+	}
+	if (i == USER_NUM) {
+		cout << "用户量已达上限制，无法继续注册" << endl;
+		throw(ERROR_USER_REGISTER);
 	}
 	Write_User(user);
 }
@@ -92,7 +98,7 @@ unsigned int Get_User(char* username)
 	if (username != NULL) {
 		User user;
 		Read_User(user);
-		username = user.u_name[user_id];
+		strcpy(username, user.u_name[user_id]);
 	}
 	return user_id;
 }
@@ -120,6 +126,7 @@ void Change_User_Group(const char* user_name,unsigned int user_group)
 		throw(ERROR_USER_NOT_EXIST);
 	}
 	user.u_gid[i] = user_group;
+	Write_User(user);
 }
 //显示用户列表
 void Show_User_List()

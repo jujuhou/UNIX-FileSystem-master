@@ -144,6 +144,12 @@ void Delete_File(const char* file_name)
 		throw(ERROR_INVALID_FILENAME);
 	}
 
+	//检查文件是否已被用户打开
+	if (inode.i_count > 0) {
+		cout << "当前文件已被打开，无法删除" << endl;
+		throw(ERROR_NO_PERMISSION);
+	}
+
 	//检查删除的权限（删除需要上一级目录的写权限）
 	//首先查找上一级目录
 	//读出User结构体
@@ -164,19 +170,19 @@ void Delete_File(const char* file_name)
 		cout << "您没有权限删除该文件" << endl;
 		throw(ERROR_NO_PERMISSION);
 	}
-	//检查文件是否已被用户打开
-	if (inode.i_count > 0) {
-		cout << "当前文件已被打开，无法删除" << endl;
-		throw(ERROR_NO_PERMISSION);
-	}
+	
 	
 	//开始进行删除
 	//首先释放所有的block
-	while (inode.i_size > 0) {
+	bool stop = !(inode.i_size > 0);
+	while (!stop) {
 		unsigned int block_num_logical = (inode.i_size-1) / BLOCK_SIZE;
 		unsigned int block_num_physical_1,block_num_physical_2, block_num_physical_3;
 		Get_Block_Pysical_Num(inode,block_num_logical, block_num_physical_1, block_num_physical_2, block_num_physical_3);
 		
+		if (inode.i_size < BLOCK_SIZE)
+			stop = true;
+
 		inode.i_size-= BLOCK_SIZE;
 		Free_Block(block_num_physical_1);
 		if (block_num_logical >= 6 && block_num_logical <= 261 && (block_num_logical - 6) % 128 == 0) {
@@ -188,6 +194,7 @@ void Delete_File(const char* file_name)
 		if (block_num_logical >= 262 && (block_num_logical - 262) % (128*128) == 0) {
 			Free_Block(block_num_physical_3);
 		}
+		
 	}
 	//更新位示图（释放Inode）
 	unsigned int inode_bitmap[INODE_NUM];
@@ -299,7 +306,7 @@ File* Open_File(const char* file_name)
 
 	File* file = new File;
 	file->f_inodeid = inode_num;
-	file->f_offset = inode.i_size;
+	file->f_offset = 0;
 	file->f_uid = user_id;
 
 	return file;
@@ -497,7 +504,7 @@ void Seek_File(File* file, unsigned int pos)
 }
 
 //读文件
-unsigned int Read_File(File* file,char* content)
+unsigned int Read_File(File* file,char* content,int length)
 {
 	Inode inode;
 	int inode_num = file->f_inodeid;
@@ -527,14 +534,15 @@ unsigned int Read_File(File* file,char* content)
 	unsigned int block_num_logical;
 	unsigned int block_num_physical;
 	unsigned int content_offset=0;
-	file->f_offset = 0;
-	while (file->f_offset < inode.i_size) {
+	while (file->f_offset < inode.i_size&& (content_offset<length||length==-1)) {
 		block_num_logical = (file->f_offset) / BLOCK_SIZE;
 		unsigned int tmp2, tmp3;
 		Get_Block_Pysical_Num(inode,block_num_logical, block_num_physical, tmp2, tmp3);
 
 		unsigned int read_byte_num;
-		read_byte_num = ((inode.i_size - file->f_offset) < BLOCK_SIZE) ? inode.i_size - file->f_offset : BLOCK_SIZE;
+		read_byte_num = ((inode.i_size - file->f_offset) < (BLOCK_SIZE- file->f_offset% BLOCK_SIZE)) ? inode.i_size - file->f_offset : (BLOCK_SIZE- file->f_offset % BLOCK_SIZE);
+		if(length!=-1)
+			read_byte_num = (read_byte_num < (length - content_offset)) ? read_byte_num : (length - content_offset);
 
 		char block_content[BLOCK_SIZE];
 		fd.open(DISK_NAME, ios::out | ios::in | ios::binary);
@@ -542,11 +550,11 @@ unsigned int Read_File(File* file,char* content)
 		fd.read(block_content, sizeof(block_content));
 		fd.close();
 
-		memcpy(content + content_offset, block_content, read_byte_num);
+		memcpy(content + content_offset, block_content+ file->f_offset% BLOCK_SIZE, read_byte_num);
 		content_offset += read_byte_num;
+		content[content_offset] = '\0';
 		file->f_offset += read_byte_num;
 	}
-	//补一个尾零方便输出
 	content[content_offset] = '\0';
 	return strlen(content);
 }

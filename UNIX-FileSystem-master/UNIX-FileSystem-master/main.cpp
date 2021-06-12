@@ -237,23 +237,56 @@ void Switch_Demand(vector<string> demand_vector)
 		}
 	}
 	else if (demand_vector[0] == "print") {
-		if (demand_vector.size() > 3)
+		if (demand_vector.size() > 6)
 			cout << "PRINT：命令语法不正确，使用\"HELP PRINT\"命令查看使用规则" << endl;
 		else {
+			int length = -1;
+			vector<string>::iterator it;
+			for (it = demand_vector.begin(); it != demand_vector.end();it++) {
+				if (*it == "-l")
+					break;
+				if (it->at(0) == '-' && !(it->at(1) == 'p' || it->at(1) == 'l')) {
+					cout << "PRINT：命令语法不正确，使用\"HELP PRINT\"命令查看使用规则" << endl;
+					return;
+				}
+			}
+			if (it != demand_vector.end())
+			{
+				it++;
+				if (!isdigit(it->at(0))) {
+					cout << "PRINT：命令语法不正确，使用\"HELP PRINT\"命令查看使用规则" << endl;
+					return;
+				}
+				length = atoi((*it).c_str());
+			}
+
 			char* content = new char[100000000];
-			auto it = file_open.find(Current_Directory() + "\\" + demand_vector[1]);
-			if (it == file_open.end()) {
+			auto i = file_open.find(Current_Directory() + "\\" + demand_vector[1]);
+			if (i == file_open.end()) {
 				cout << "未打开文件" << demand_vector[1] << endl;
+				return;
 			}
-			Read_File(it->second, content);
-			if (demand_vector.size() == 2) {
-				cout << content << endl;
+			Read_File(i->second, content,length);
+			
+
+			for (it = demand_vector.begin(); it != demand_vector.end(); it++) {
+				if (*it == "-p")
+					break;
 			}
-			else {
-				fstream f(demand_vector[2], ios::out);
+			if (it != demand_vector.end())
+			{
+				it++;
+				fstream f(*it, ios::out);
+				if (!f.is_open()) {
+					cout << "无法写入文件" << *it << endl;
+					return;
+				}
 				f << content;
 				f.close();
-				cout << "已将" << demand_vector[1] << "文件内容写入" << demand_vector[2] << endl;
+				cout << "已将" << demand_vector[1] << "文件内容写入" << *it << endl;
+			}
+			else {
+				cout << content << endl;
 			}
 			delete[]content;
 		}
@@ -346,6 +379,7 @@ void Switch_Demand(vector<string> demand_vector)
 			cout << "FORMAT：命令语法不正确，使用\"HELP FORMAT\"命令查看使用规则" << endl;
 		else {
 			Init();
+			Activate();
 			cout << "已成功格式化文件卷" << endl;
 		}
 	}
@@ -425,6 +459,7 @@ int main()
 	}
 
 	Activate();
+
 
 	string demand;
 	while (1) {
